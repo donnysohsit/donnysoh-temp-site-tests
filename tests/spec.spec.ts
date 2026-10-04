@@ -146,3 +146,65 @@ test.describe('Issue #1: dark-mode toggle', () => {
     expect(await isDark(page)).toBe(chosen);
   });
 });
+
+// SPEC.md:13-16 do not say how the button is identified. It is found the way
+// a user would: a button or link whose visible/accessible name contains the
+// word "top" (e.g. "Back to top", "Top", "↑ Top"). Hidden matches are
+// included so line 14 can check that it exists while not visible.
+//
+// "Visible" means a user could see it: rendered, not visibility:hidden, not
+// opacity 0, non-zero size, and inside the viewport. Playwright's own
+// toBeVisible() counts opacity 0 as visible, so it is not used here.
+test.describe('Issue #5: back-to-top button', () => {
+  const NAME = /\btop\b/i;
+
+  function backToTop(page: Page) {
+    return page
+      .getByRole('button', { name: NAME, includeHidden: true })
+      .or(page.getByRole('link', { name: NAME, includeHidden: true }))
+      .first();
+  }
+
+  async function userCanSee(button: Locator) {
+    return button.evaluate((el) => {
+      if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;
+      const r = el.getBoundingClientRect();
+      return (
+        r.width > 0 && r.height > 0 &&
+        r.bottom > 0 && r.right > 0 &&
+        r.top < window.innerHeight && r.left < window.innerWidth
+      );
+    });
+  }
+
+  async function scrollPastHero(page: Page) {
+    await page.evaluate(() => {
+      const hero = document.querySelector('#hero') as HTMLElement;
+      const bottom = hero.getBoundingClientRect().bottom + window.scrollY;
+      window.scrollTo({ top: bottom + 1, behavior: 'instant' });
+    });
+  }
+
+  test('SPEC.md:14 the button exists and is not visible on page load', async ({ page }) => {
+    const button = backToTop(page);
+    await expect(button, 'no button or link named "top" on the page').toBeAttached();
+    expect(await userCanSee(button), 'button is visible before scrolling').toBe(false);
+  });
+
+  test('SPEC.md:15 the button becomes visible after scrolling past #hero', async ({ page }) => {
+    const button = backToTop(page);
+    await expect(button, 'no button or link named "top" on the page').toBeAttached();
+    await scrollPastHero(page);
+    await expect.poll(() => userCanSee(button), { message: 'button not visible after scrolling past #hero' }).toBe(true);
+  });
+
+  test('SPEC.md:16 clicking the button returns the page to the top', async ({ page }) => {
+    const button = backToTop(page);
+    await expect(button, 'no button or link named "top" on the page').toBeAttached();
+    await scrollPastHero(page);
+    await expect.poll(() => userCanSee(button)).toBe(true);
+    await button.click();
+    // Allow time for smooth scrolling.
+    await expect.poll(() => page.evaluate(() => window.scrollY), { message: 'page did not return to the top' }).toBe(0);
+  });
+});
