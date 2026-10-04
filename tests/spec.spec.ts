@@ -20,8 +20,8 @@ async function isDark(page: Page) {
 // some visible button inside <nav> flips the 'dark' class on <body>.
 // Returns that button, or null if none of them does.
 async function findDarkToggle(page: Page): Promise<Locator | null> {
-  const buttons = page.locator('nav button');
-  const count = await buttons.count();
+  await open(page);
+  const count = await page.locator('nav button').count();
   for (let i = 0; i < count; i++) {
     await open(page);
     const button = page.locator('nav button').nth(i);
@@ -39,6 +39,12 @@ async function repoLinks(section: Locator) {
   );
   return hrefs.filter((h) => REPO_LINK.test(h));
 }
+
+// Every test starts on the site. Tests that need a viewport or network mocks
+// set them up and then open the site again.
+test.beforeEach(async ({ page }) => {
+  await open(page);
+});
 
 test.describe('Conventions', () => {
   test('SPEC.md:4 all six section ids exist', async ({ page }) => {
