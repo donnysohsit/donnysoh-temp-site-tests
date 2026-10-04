@@ -1,6 +1,6 @@
 # donnysoh-temp-site-tests
 
-Functional tests for donnysoh-temp-site, written with Playwright and TypeScript.
+Functional tests for donnysoh-tempsite, written with Playwright and TypeScript.
 
 Tests are derived from the site's SPEC.md and run against a live deployment:
 
