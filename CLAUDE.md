@@ -1,4 +1,4 @@
-# donnysoh-temp-site-tests: functional tests for donnysoh-temp-site
+# donnysoh-temp-site-tests: functional tests for donnysoh-tempsite
 Playwright with TypeScript. Tests run against a live URL given by the BASE_URL environment variable.
 
 ## Role
